@@ -24,35 +24,36 @@ with open('BrazilTweets.csv','rb') as f:
     for row in reader:
                 content = row[0]
                 content = content.lower()
-                words = re.findall(r'\w+', content,flags = re.UNICODE | re.LOCALE)
+                words = re.findall(r'\w+', content,flags = re.UNICODE | re.LOCALE) # Regular expression which is ignoring numeric and special characters. It is only taking words.
+
 #This is the simple way to remove stop words
                 important_words=[]
                 for word in words:
                      if word not in stopwords.words('portuguese'):
                             important_words.append(word)
                 important_string = str(important_words)
-                important_string = important_string.replace("'", "")
-                important_string = re.sub(" \d+", "", important_string)
-                important_string = important_string.replace(",", "")
-                important_string = important_string.replace("[", "")
-                important_string = important_string.replace("]", "")
+# Not removing stopwords because certain stopwords in english might have some meaning in Portuguese
+               # important_string = important_string.replace("'", "")
+               # important_string = re.sub(" \d+", "", important_string) # rechecking to replace any digit to blank
+               # important_string = important_string.replace(",", "")
+               # important_string = important_string.replace("[", "")
+               # important_string = important_string.replace("]", "")
                 mylist.append(important_string)
                 count = count + 1
                 if count > 10:
-                     break
-
+                    break
 documents = mylist
 
 # Data cleaning - Iteration 2
 texts = [[word for word in document.lower().split() if word not in stopwords.words('portuguese')]
-         for document in documents]
+         for document in documents] # Convert to lower case and change a string to list. After that, for words not in stopwords are taken into texts
 
-all_tokens = sum(texts, [])
-tokens_once = set(word for word in set(all_tokens) if all_tokens.count(word) == 1)
+all_tokens = sum(texts, []) # It is a list of lists. It collects all of the tokens/words from all the documents.
+tokens_once = set(word for word in set(all_tokens) if all_tokens.count(word) == 1) # checking for the words occuring only once. Instead of checking it for all the documents, we are checking it just one time for all the words in all the documents
 texts = [[word for word in text if word not in tokens_once]
-         for text in texts]
+         for text in texts] # Arranges in a way so that every document will be an array of arrays where each array will represent a document
 
-dictionary = corpora.Dictionary(texts)
+dictionary = corpora.Dictionary(texts) # Until now we had words in a format of 2-d array. Here we are changing it to the collection of documents becuase LDA takes corpus as the input and not 2-d array words
 corpus = [dictionary.doc2bow(text) for text in texts]
 
 # LDA Model
@@ -61,10 +62,10 @@ lda = LdaModel(corpus, id2word=dictionary, num_topics=10)
 #print lda.print_topics(num_words=100,num_topics=10)
 for i in range(0, lda.num_topics):
    # print lda.print_topic(i)
-    string_topic = lda.print_topic(i)
-    topic_words = re.findall(r'\b[a-z]+\b',string_topic)
-    word_score = re.findall(r'0.\d+',string_topic)
-    tp_number = i + 1
+    string_topic = lda.print_topic(i) # words and their respective scores are represented together in a format [word_score*words]
+    print string_topic
+    topic_words = re.findall(r'\b[a-z]+\b',string_topic) # Extracting only words from all the strings (word + word score)
+    word_score = re.findall(r'0.\d+',string_topic) # Extracting only word score from all the strings (word + word score)
     final_words = []
     final_word_score = []
     for i in topic_words:
